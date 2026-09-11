@@ -1,5 +1,8 @@
 package br.edu.infnet.ecommerce.payment.domain;
 
+import br.edu.infnet.ecommerce.payment.event.AggregateRoot;
+import br.edu.infnet.ecommerce.payment.event.PagamentoAprovado;
+import br.edu.infnet.ecommerce.payment.event.PagamentoRecusado;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -8,7 +11,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "pagamentos")
-public class Pagamento {
+public class Pagamento extends AggregateRoot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -68,6 +71,8 @@ public class Pagamento {
         this.statusPagamento = StatusPagamento.APROVADO;
         this.codigoAutorizacao = codigoAutorizacao;
         this.processadoEm = LocalDateTime.now();
+
+        registrarEvento(new PagamentoAprovado(this.getId(), this.getUsuarioId(), this.getValor()));
     }
 
     public void recusar(String motivo) {
@@ -78,6 +83,8 @@ public class Pagamento {
         this.statusPagamento = StatusPagamento.RECUSADO;
         this.motivo = motivo;
         this.processadoEm = LocalDateTime.now();
+
+        registrarEvento(new PagamentoRecusado(this.getId(), this.getUsuarioId(), this.getValor(), motivo));
     }
 
     private void exigirPendente() {
